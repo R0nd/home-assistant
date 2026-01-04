@@ -74,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     async def add_item_service(call: ServiceCall) -> None:
         """Add an item with `name`."""
         data = hass.data[DOMAIN]
-        await data.async_add(call.data[ATTR_NAME])
+        await data.async_add(call.data[ATTR_NAME], context=call.context)
 
     async def remove_item_service(call: ServiceCall) -> None:
         """Remove the first item with matching `name`."""
@@ -86,14 +86,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         except IndexError:
             _LOGGER.error("Removing of item failed: %s cannot be found", name)
         else:
-            await data.async_remove(item["id"])
+            await data.async_remove(item["id"], context=call.context)
 
     async def complete_item_service(call: ServiceCall) -> None:
         """Mark the first item with matching `name` as completed."""
         data = hass.data[DOMAIN]
         name = call.data[ATTR_NAME]
         try:
-            await data.async_complete(name)
+            await data.async_complete(name, context=call.context)
         except NoMatchingShoppingListItem:
             _LOGGER.error("Completing of item failed: %s cannot be found", name)
 
@@ -107,23 +107,25 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         except IndexError:
             _LOGGER.error("Restoring of item failed: %s cannot be found", name)
         else:
-            await data.async_update(item["id"], {"name": name, "complete": False})
+            await data.async_update(
+                item["id"], {"name": name, "complete": False}, context=call.context
+            )
 
     async def complete_all_service(call: ServiceCall) -> None:
         """Mark all items in the list as complete."""
-        await data.async_update_list({"complete": True})
+        await data.async_update_list({"complete": True}, context=call.context)
 
     async def incomplete_all_service(call: ServiceCall) -> None:
         """Mark all items in the list as incomplete."""
-        await data.async_update_list({"complete": False})
+        await data.async_update_list({"complete": False}, context=call.context)
 
     async def clear_completed_items_service(call: ServiceCall) -> None:
         """Clear all completed items from the list."""
-        await data.async_clear_completed()
+        await data.async_clear_completed(context=call.context)
 
     async def sort_list_service(call: ServiceCall) -> None:
         """Sort all items by name."""
-        await data.async_sort(call.data[ATTR_REVERSE])
+        await data.async_sort(call.data[ATTR_REVERSE], context=call.context)
 
     data = hass.data[DOMAIN] = ShoppingData(hass)
     await data.async_load()
